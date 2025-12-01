@@ -1,0 +1,10 @@
+/.metadata/
+\.metadata\
+.env
+.metadata/
+.metadata\
+/.metadata
+*.md
+*.snap
+/.metadata/.plugins
+.metadata/.plugins/org.eclipse.core.resources/.projects/nikatalks-commons/.markers.snap

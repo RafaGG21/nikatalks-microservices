@@ -1,0 +1,164 @@
+version: "3.9"
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql 
+    networks:
+      - nikatalks-network
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    restart: always
+    ports:
+      - "8761:8761"
+    networks:
+      - nikatalks-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://eureka-server:8761/eureka/apps"]
+      interval: 5s
+      retries: 12
+      start_period: 10s
+  nikatalks-auth:
+    build: ./nikatalks-auth
+    container_name: nikatalks-auth
+    restart: always
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network
+      
+  nikatalks-files:
+    build: ./nikatalks-files
+    container_name: nikatalks-files
+    restart: always
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+      DIGITAL_OCEAN_ACCESS_KEY: ${DIGITAL_OCEAN_ACCESS_KEY}
+      DIGITAL_OCEAN_SECRET_KEY: ${DIGITAL_OCEAN_SECRET_KEY}
+      DIGITAL_OCEAN_BUCKET_NAME: ${DIGITAL_OCEAN_BUCKET_NAME}
+      DIGITAL_OCEAN_REGION: ${DIGITAL_OCEAN_REGION}
+      DIGITAL_OCEAN_ENDPOINT: ${DIGITAL_OCEAN_ENDPOINT}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network
+      
+  nikatalks-publications:
+    build: ./nikatalks-publications
+    container_name: nikatalks-publications
+    restart: always
+    ports:
+      - "8089:8089"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network
+      
+  nikatalks-classes:
+    build: ./nikatalks-classes
+    container_name: nikatalks-classes
+    restart: always
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network
+
+  nikatalks-chat:
+    build: ./nikatalks-chat
+    container_name: nikatalks-chat
+    restart: always
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network
+  nikatalks-payments:
+    build: ./nikatalks-payments
+    container_name: nikatalks-payments
+    restart: always
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+      STRIPE_KEY_PUBLIC: ${STRIPE_KEY_PUBLIC}
+      STRIPE_KEY_SECRET: ${STRIPE_KEY_SECRET}
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - nikatalks-network  
+  nikatalks-gateway:
+    build: ./nikatalks-gateway
+    container_name: nikatalks-gateway
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+    depends_on:
+      - eureka-server
+      - nikatalks-auth
+      - nikatalks-files
+      - nikatalks-publications
+      - nikatalks-classes
+      - nikatalks-chat
+      - nikatalks-payments
+    networks:
+      - nikatalks-network
+networks:
+  nikatalks-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
